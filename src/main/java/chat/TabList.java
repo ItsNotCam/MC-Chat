@@ -1,4 +1,4 @@
-package skyechat.skyechat;
+package chat;
 
 import net.minecraft.server.v1_16_R1.ChatComponentText;
 import net.minecraft.server.v1_16_R1.PacketPlayOutPlayerListHeaderFooter;

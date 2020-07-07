@@ -1,4 +1,4 @@
-package skyechat.skyechat;
+package chat;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -15,64 +15,33 @@ import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-
-import static org.bukkit.event.entity.EntityDamageEvent.DamageCause.BLOCK_EXPLOSION;
-
 
 public class ChatListener implements Listener
 {
-    private SkyeChat plugin;
-    public static final String SkyeColor = ChatColor.AQUA + "" +
-            ChatColor.ITALIC;
+    ChatPlugin plugin;
 
-    public ChatListener(SkyeChat _plugin) {
+    public ChatListener(ChatPlugin _plugin) {
         plugin = _plugin;
     }
 
     @EventHandler
     public void onJoin(PlayerJoinEvent _event) {
-        String ogPlayerName, playerName, introMsg;
+        String ogPlayerName, playerName;
 
         ogPlayerName = _event.getPlayer().getName();
         playerName = this.getOrAddPlayerName(ogPlayerName);
 
         _event.getPlayer().setDisplayName(playerName);
         _event.getPlayer().setPlayerListName(playerName);
-        _event.setJoinMessage(this.getIntroMessage(ogPlayerName));
-
-/*
-        if(playerName.equalsIgnoreCase("moosura")) {
-            _event.setJoinMessage(ChatColor.GREEN + "" + ChatColor.ITALIC + "+ " + SkyeColor + "Moosura"
-                            + ChatColor.GRAY + "" + ChatColor.ITALIC + "? More like Noobsura.");
-        } else if(playerName.equalsIgnoreCase("axii0m")) {
-            _event.setJoinMessage(defaultMessage + ChatColor.AQUA + "" + ChatColor.ITALIC + playerName + ChatColor.GRAY
-                    + "" + ChatColor.ITALIC + " the realest is here. All is well.");
-        } else if(playerName.equalsIgnoreCase("neonmaenad")) {
-            String neon = ChatColor.AQUA + "" + ChatColor.ITALIC + "Ne" + ChatColor.LIGHT_PURPLE + "" + ChatColor.ITALIC
-                    + "on" + ChatColor.WHITE + "" + ChatColor.ITALIC + "Ma" + ChatColor.LIGHT_PURPLE + ChatColor.ITALIC
-                    + "en" + ChatColor.AQUA + "" + ChatColor.ITALIC + "ad";
-
-            _event.setJoinMessage(defaultMessage + ChatColor.GRAY + "" + ChatColor.ITALIC
-                    + "Queen " + neon + ChatColor.GRAY + "" + ChatColor.ITALIC
-                    + " has arrived, long may she reign.");
-        } else if(playerName.equalsIgnoreCase("micthemurph")) {
-            _event.setJoinMessage(defaultMessage + ChatColor.GRAY + "" + ChatColor.ITALIC + "Lol, who's "
-                    + ChatColor.AQUA + "" + ChatColor.ITALIC + playerName + ChatColor.GRAY + "" + ChatColor.ITALIC + "?");
-        } else {
-            _event.setJoinMessage(defaultMessage + ChatColor.GRAY + "" + ChatColor.ITALIC + "My man "
-                    + ChatColor.AQUA + "" + ChatColor.ITALIC + playerName + ChatColor.GRAY + "" + ChatColor.ITALIC
-            + " has joined up");
-        }*/
+        _event.setJoinMessage(ChatColor.GREEN + "+ " +  ChatColor.GRAY + "" + ChatColor.ITALIC +
+                this.getIntroMessage(ogPlayerName));
     }
 
     @EventHandler
     public void onLeave(PlayerQuitEvent _event) {
-        String ogPlayerName = _event.getPlayer().getName();
-        _event.setQuitMessage(this.getOutroMessage(ogPlayerName));
+        _event.setQuitMessage(ChatColor.RED + "" + ChatColor.ITALIC + "- " +
+                this.getOutroMessage(_event.getPlayer().getName()));
     }
 
     @EventHandler
@@ -89,7 +58,7 @@ public class ChatListener implements Listener
         String killer = killerEntity == null ? "murder thingy" : killerEntity.getName();
 
         EntityDamageEvent.DamageCause dc = de.getCause();
-        String playerName = this.getOrAddPlayerName(player.getName());
+        String playerName = player.getDisplayName(); //this.getOrAddPlayerName(player.getName());
         String deathMessage = ChatColor.RED + "" + ChatColor.ITALIC + playerName;
 
         switch(dc) {
@@ -124,6 +93,7 @@ public class ChatListener implements Listener
 
         String finalDeathMessage = this.getDeathMessage(player.getName(), deathMessage);
         Bukkit.getOnlinePlayers().forEach(p -> p.sendMessage(finalDeathMessage));
+        Bukkit.getConsoleSender().sendMessage(finalDeathMessage);
     }
 
     @EventHandler
@@ -136,14 +106,13 @@ public class ChatListener implements Listener
         e.setCancelled(true);
 
         String rawMessage = e.getMessage();
-        String playerName = getOrAddPlayerName(e.getPlayer().getName());
+        String playerName = e.getPlayer().getDisplayName();
 
         String message = ChatColor.AQUA + "" + ChatColor.ITALIC + playerName + ChatColor.GRAY + " > "
                 + ChatColor.WHITE + rawMessage;
 
-        for(Player player : this.plugin.getServer().getOnlinePlayers()) {
-            player.sendMessage(message);
-        }
+        Bukkit.getServer().getOnlinePlayers().forEach(player -> player.sendMessage(message));
+        Bukkit.getServer().getConsoleSender().sendMessage(message);
     }
 
     private Entity getLastEntityDamager(Entity entity) {
@@ -198,40 +167,36 @@ public class ChatListener implements Listener
         for(String message : introMsgs) {
             String[] msg = message.split(":");
             if(msg[0].equalsIgnoreCase(ogPlayerName)) {
-                return ChatColor.GREEN + "" + ChatColor.ITALIC + "+ " + ChatColor.GRAY + "" + ChatColor.ITALIC +
-                        msg[1].replaceAll("%PLAYERNAME%", playerName);
+                return ChatColor.GRAY + "" + ChatColor.ITALIC + msg[1].replaceAll("%PLAYERNAME%", playerName);
             }
         }
 
-        introMsg = ChatColor.GREEN + "" + ChatColor.ITALIC + "+ " + ChatColor.GRAY + "" + ChatColor.ITALIC +
-                introMsg.replaceAll("%PLAYERNAME%", playerName);
         introMsgs.add(String.format("%s:%s", ogPlayerName, introMsg));
         this.plugin.getConfig().set("playerIntroMessages", introMsgs);
         this.plugin.saveConfig();
 
-        return introMsg;
+        return introMsg.replaceAll("%PLAYERNAME%", playerName);
     }
 
     private String getOutroMessage(String ogPlayerName) {
         String outroMsg = "%PLAYERNAME%";
-        String playerName = ChatColor.DARK_AQUA + "" + ChatColor.ITALIC + this.getOrAddPlayerName(ogPlayerName)
+        String playerName = ChatColor.DARK_AQUA + "" + ChatColor.ITALIC
+                + Bukkit.getServer().getPlayer(ogPlayerName).getDisplayName()
                 + ChatColor.GRAY + "" + ChatColor.ITALIC;
 
         List<String> outroMsgs = this.plugin.getConfig().getStringList("playerOutroMessages");
         for(String message : outroMsgs) {
             String[] msg = message.split(":");
             if(msg[0].equalsIgnoreCase(ogPlayerName)) {
-                return ChatColor.RED + "" + ChatColor.ITALIC + "- " +
-                        msg[1].replaceAll("%PLAYERNAME%", playerName);
+                return msg[1].replaceAll("%PLAYERNAME%", playerName);
             }
         }
 
-        outroMsg = outroMsg.replaceAll("%PLAYERNAME%", playerName);
-        outroMsgs.add(String.format("%s:%s", ogPlayerName, outroMsg.substring(2)));
+        outroMsgs.add(String.format("%s:%s", ogPlayerName, outroMsg));
         this.plugin.getConfig().set("playerOutroMessages", outroMsgs);
         this.plugin.saveConfig();
 
-        return ChatColor.RED + "" + ChatColor.ITALIC + "- " + ChatColor.DARK_AQUA + "" + ChatColor.ITALIC + outroMsg;
+        return outroMsg.replaceAll("%PLAYERNAME%", playerName);
     }
 }
 

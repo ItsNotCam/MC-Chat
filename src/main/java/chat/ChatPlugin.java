@@ -1,13 +1,12 @@
-package skyechat.skyechat;
+package chat;
 
 import org.bukkit.configuration.InvalidConfigurationException;
-import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.IOException;
 import java.util.ArrayList;
 
-public final class SkyeChat extends JavaPlugin {
+public final class ChatPlugin extends JavaPlugin {
 
     ChatListener chatListener;
 
@@ -16,7 +15,7 @@ public final class SkyeChat extends JavaPlugin {
         // init config
 
         try {
-            this.getConfig().load("plugins/SkyeChat/config.yml");
+            this.getConfig().load("plugins/Chat/config.yml");
         } catch (IOException | InvalidConfigurationException e) {
             e.printStackTrace();
 
