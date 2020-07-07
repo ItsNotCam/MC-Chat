@@ -1,0 +1,3 @@
+name: SkyeChat
+version: ${project.version}
+main: skyechat.skyechat.SkyeChat
